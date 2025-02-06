@@ -76,7 +76,7 @@ func (s *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	for !s.close {
-		mt, message, err := conn.ReadMessage()
+		mt, _, err := conn.ReadMessage()
 		if err != nil {
 			s.mutex.Lock()
 			delete(s.clients, conn)
@@ -86,7 +86,6 @@ func (s *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		if mt == websocket.PongMessage {
 			s.clients[conn] = true
 		}
-		broadcast <- message
 	}
 }
 

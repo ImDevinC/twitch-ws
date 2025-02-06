@@ -5,3 +5,11 @@ I wrote this because I've been utilizing the twitch websockets more in some pers
 
 >[!WARNING]
 >This is not something that should be run with open access as it has no security features. This was written to run on my own internal network.
+
+## How it works
+To start, the server creates a connection to the Twitch EventSub websocket. It then subscribes to the events I care about.
+A websocket server is then created that clients can connect to. The only requirement for this server is that a `ping` message is sent every 10 seconds and the clients should respond with a valid `pong` message within 10 seconds or they will be disconnected.
+
+When a message is received from the Twitch EventSub, the data is massaged into the `models.Event` format, and then broadcast to all connected clients on the websocket server.
+
+Messages from clients are dropped and not sent anywhere.
