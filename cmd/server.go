@@ -27,13 +27,18 @@ func main() {
 	if len(clientID) == 0 {
 		logger.Fatal("missing TWITCH_CLIENT_ID")
 	}
-	accessToken := strings.TrimSpace(os.Getenv("TWITCH_ACCESS_TOKEN"))
-	if len(accessToken) == 0 {
-		logger.Fatal("missing TWITCH_ACCESS_TOKEN")
-	}
 	userID := strings.TrimSpace(os.Getenv("TWITCH_USER_ID"))
 	if len(userID) == 0 {
 		logger.Fatal("missing TWITCH_USER_ID")
+	}
+
+	// Print this here so that we can get the URL if no access token is available
+	authURL := fmt.Sprintf(wsUrl, clientID, url.QueryEscape(strings.Join(scopes, " ")))
+	logger.WithField("authURL", authURL).Info("URL")
+
+	accessToken := strings.TrimSpace(os.Getenv("TWITCH_ACCESS_TOKEN"))
+	if len(accessToken) == 0 {
+		logger.Fatal("missing TWITCH_ACCESS_TOKEN")
 	}
 	websocketURL := strings.TrimSpace(os.Getenv("TWITCH_WEBSOCKET_URL"))
 	if len(websocketURL) == 0 {
@@ -43,9 +48,6 @@ func main() {
 	if len(subscriptionURL) == 0 {
 		subscriptionURL = "https://api.twitch.tv/helix/eventsub/subscriptions"
 	}
-
-	authURL := fmt.Sprintf(wsUrl, clientID, url.QueryEscape(strings.Join(scopes, " ")))
-	logger.WithField("authURL", authURL).Info("URL")
 
 	if err := app.Start(logger, app.Config{
 		ClientID:        clientID,
