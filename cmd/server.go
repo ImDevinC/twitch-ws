@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/imdevinc/twitch-ws/internal/app"
@@ -49,13 +50,20 @@ func main() {
 		subscriptionURL = "https://api.twitch.tv/helix/eventsub/subscriptions"
 	}
 
+	rawWebsocketPort := strings.TrimSpace(os.Getenv("WEBSOCKET_SERVER_PORT"))
+	logger.WithField("raw", rawWebsocketPort).Info("PORT")
+	wsPort, err := strconv.Atoi(rawWebsocketPort)
+	if err != nil {
+		logger.Fatal("invalid WEBSOCKET_SERVER_PORT")
+	}
+
 	if err := app.Start(logger, app.Config{
 		ClientID:        clientID,
 		AccessToken:     accessToken,
 		UserId:          userID,
 		WebsocketURL:    websocketURL,
 		SubscriptionURL: subscriptionURL,
-		Port:            8080,
+		Port:            wsPort,
 	}); err != nil {
 		logger.WithError(err).Fatal("app failed")
 	}

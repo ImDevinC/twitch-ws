@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gorilla/websocket"
 	"github.com/imdevinc/twitch-ws/internal/models"
 	"github.com/imdevinc/twitch-ws/internal/sockets"
 	"github.com/joeyak/go-twitch-eventsub/v3"
@@ -25,8 +24,6 @@ type app struct {
 	socket          *sockets.Server
 }
 
-var upgrader = websocket.Upgrader{}
-
 func Start(logger *logrus.Logger, config Config) error {
 	client := twitch.NewClientWithUrl(config.WebsocketURL)
 	s := sockets.New(logger, config.Port)
@@ -40,7 +37,7 @@ func Start(logger *logrus.Logger, config Config) error {
 		subscriptionURL: config.SubscriptionURL,
 	}
 	client.OnError(func(err error) {
-		a.logger.WithError(err).Error("client error")
+		a.logger.WithError(err).Error("twitch client error")
 	})
 	client.OnKeepAlive(func(message twitch.KeepAliveMessage) {
 		a.logger.WithField("message", message).Debug("keep alive")
@@ -64,13 +61,12 @@ func Start(logger *logrus.Logger, config Config) error {
 		}
 	}()
 	go s.Start()
+	defer client.Close()
+	defer s.Close()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
-
-	client.Close()
-	s.Close()
 
 	return nil
 }
