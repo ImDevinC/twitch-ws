@@ -8,7 +8,7 @@ build-linux-x64:
 clean:
 	rm -rf out
 
-release-all: clean build-windows-x64 build-linux-x64
+release: clean build-windows-x64 build-linux-x64
 	cd out/windows-x64 && \
 	zip ../twitch-ws-windows-x64-${RELEASE_VERSION}.zip twitch-ws.exe
 	cd  out/linux-x64 && \
