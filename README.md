@@ -24,6 +24,17 @@ TWITCH_ACCESS_TOKEN=<ACCESS_TOKEN>
 8. Any clients you want to get the receive message should connect to `ws://localhost:8080/ws`.
 9. Once connected, anytime your client receives a `PING` message, they should respond with a valid `PONG` message or they will be disconnected. 
 
+## Testing
+It is advised to do your testing against a demo server. This can be done using the [twitch-cli](https://dev.twitch.tv/docs/cli/) and any other sample websocket app (like https://piehost.com/websocket-tester)
+1. To start, enable the Twitch test server by running `twitch-cli event websocket start-server -S`
+2. In your `.env` file, set `TWITCH_WEBSOCKET_URL=ws://127.0.0.1:8080/ws` and set `TWITCH_SUBSCRIPTION_URL=http://127.0.0.1:8080/eventsub/subscriptions`
+3. Make sure in your `.env` file that if you have `WS_PORT` set, it is _not_ set to `8080` or it will conflict with the Twitch websocket server
+4. Run the app, using the compiled binary or by running `go run cmd/server.go`
+5. Once the connection is validated, use your preferred websocket client to connect to `ws://localhost:8000/ws`
+6. In a separate window, you can now trigger `twitch-cli` commands to see how they look on the receiving client.
+    - Make sure to use `--transport=websocket` option
+    - IE: `twitch-cli event trigger channel.cheer --transport=websocket`
+
 ## How it works
 To start, the server creates a connection to the Twitch EventSub websocket. It then subscribes to the events I care about.
 A websocket server is then created that clients can connect to. The only requirement for this server is that a `ping` message is sent every 10 seconds and the clients should respond with a valid `pong` message within 10 seconds or they will be disconnected.
@@ -31,3 +42,49 @@ A websocket server is then created that clients can connect to. The only require
 When a message is received from the Twitch EventSub, the data is massaged into the `models.Event` format, and then broadcast to all connected clients on the websocket server.
 
 Messages from clients are dropped and not sent anywhere.
+
+### Message format
+All messages will be formatted into the following, with appropriate values based on the event type (IE: for a `subscription` event, only the `subscription` subsection will be available)
+
+If an action includes a message (such as a reward redemption, subscription, bits, etc) then that message will always be available in the root `message` value.
+```jsonc
+{
+    "type": "", // See the list of types outlined below
+    "display_name": "", // The Twitch display name of the user who performed the action
+    "user_id": "", // The Twitch user ID of the user who performed the action
+    "message": "", // If a message is included from the user
+    "is_anonymous": "", // If the requested this action anonymously
+    "subscription": {
+        "from_user_id": "", // If gifted, the user ID of that person
+        "from_user_display_name": "", // If gifted, the display name of that person
+        "is_gift": false, // Is this a gifted subscription
+        "tier": "", // The tier level of the subscription. Note that this will be 1000, 2000, or 3,000
+        "total": 0, // How many months the user has subbed for in total
+    },
+    "channel_point_redemption": {
+        "reward_id": "" // The ID of the reward that was redeemed
+        "title": "" // The title of the reward that was redeemed
+        "cost": 0 // The cost of the reward that was redeemed
+        "prompt": "" // If there was a prompt from the reward (note that the user message will be in the root `message` field
+    },
+    "bits": {
+        "amount": 0 // The amount of bits spent
+    },
+    "raid": {
+        "viewers": 0 // The number of viewers brought along with the raid
+    }
+}
+```
+
+### Supported types
+---
+| EventSub Type | Local Type | Description | Notes |
+---
+| `channel.follow` | `follow` | A user follows the channel | |
+| `channel.subscription.gift` | `gift_sub` | A user is gifted a sub | `is_gift` will be `true` |
+| `channel.subscribe` | `subscribe` | A user subscribes | `is_gift` will be `false` |
+| `channel.subscription.message` | `resubscribe` | When a user resubscribes and includes a message, this is the type | |
+| `channel.chat.message` | `chat` | A chat message is sent | |
+| `channel.channel_points_custom_reward_redemption.add` | `channel_points` | When a user redeems a custom channel point | |
+| `channel.cheer` | `bits` | When a user spends bits | |
+| `channel.raid` | `raid` | When a user raids the watched channel | |

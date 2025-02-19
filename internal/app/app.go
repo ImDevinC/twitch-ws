@@ -130,13 +130,16 @@ func (a *app) onChannelFollow(message twitch.EventChannelFollow) {
 }
 
 func (a *app) onChannelGiftSubscribe(message twitch.EventChannelSubscriptionGift) {
-	a.logger.WithField("message", message).Info("subscribe")
+	a.logger.WithField("message", message).Info("gift subscription")
 	event := models.Event{
 		DisplayName: message.UserName,
 		UserID:      message.UserID,
-		SubTier:     message.Tier,
-		Type:        "subscribe",
-		IsGift:      true,
+		Type:        "gift_sub",
+		IsAnonymous: message.IsAnonymous,
+		Subscription: &models.EventSubscription{
+			Tier:  message.Tier,
+			Total: message.Total,
+		},
 	}
 	a.sendMessage(event)
 }
@@ -146,21 +149,26 @@ func (a *app) onChannelSubscribe(message twitch.EventChannelSubscribe) {
 	event := models.Event{
 		DisplayName: message.UserName,
 		UserID:      message.UserID,
-		SubTier:     message.Tier,
 		Type:        "subscribe",
-		IsGift:      message.IsGift,
+		Subscription: &models.EventSubscription{
+			Tier:   message.Tier,
+			IsGift: message.IsGift,
+		},
 	}
 	a.sendMessage(event)
 }
 
 func (a *app) onChannelResubscribe(message twitch.EventChannelSubscriptionMessage) {
-	a.logger.WithField("message", message).Info("subscribe")
+	a.logger.WithField("message", message).Info("subscribe with message")
 	event := models.Event{
 		DisplayName: message.UserName,
 		UserID:      message.UserID,
-		SubTier:     message.Tier,
 		Type:        "resubscribe",
 		Message:     message.Message.Text,
+		Subscription: &models.EventSubscription{
+			Tier:  message.Tier,
+			Total: message.CumulativeMonths,
+		},
 	}
 	a.sendMessage(event)
 }
@@ -179,11 +187,16 @@ func (a *app) onChannelChatMessage(message twitch.EventChannelChatMessage) {
 func (a *app) onChannelPointRedemption(message twitch.EventChannelChannelPointsCustomRewardRedemptionAdd) {
 	a.logger.WithField("message", message).Info("channel point redemption")
 	event := models.Event{
-		DisplayName:   message.UserName,
-		UserID:        message.UserID,
-		Message:       message.UserInput,
-		ChannelPoints: message.Reward.Cost,
-		Type:          "channel_points",
+		DisplayName: message.UserName,
+		UserID:      message.UserID,
+		Message:     message.UserInput,
+		Type:        "channel_points",
+		ChannelPointRedemption: &models.EventCustomChannelPointsRedemption{
+			RewardID: message.Reward.ID,
+			Title:    message.Reward.Title,
+			Prompt:   message.Reward.Prompt,
+			Cost:     message.Reward.Cost,
+		},
 	}
 	a.sendMessage(event)
 }
@@ -194,8 +207,11 @@ func (a *app) onChannelCheer(message twitch.EventChannelCheer) {
 		DisplayName: message.UserName,
 		UserID:      message.UserID,
 		Message:     message.Message,
-		Bits:        message.Bits,
 		Type:        "bits",
+		IsAnonymous: message.IsAnonymous,
+		Bits: &models.EventCheer{
+			Amount: message.Bits,
+		},
 	}
 	a.sendMessage(event)
 }
@@ -205,8 +221,10 @@ func (a *app) onChannelRaid(message twitch.EventChannelRaid) {
 	event := models.Event{
 		DisplayName: message.FromBroadcasterUserName,
 		UserID:      message.FromBroadcasterUserId,
-		Viewers:     message.Viewers,
 		Type:        "raid",
+		Raid: &models.EventRaid{
+			Viewers: message.Viewers,
+		},
 	}
 	a.sendMessage(event)
 }

@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/imdevinc/twitch-ws/internal/app"
@@ -24,46 +21,23 @@ var scopes = []string{
 
 func main() {
 	logger := logrus.New()
-	clientID := strings.TrimSpace(os.Getenv("TWITCH_CLIENT_ID"))
-	if len(clientID) == 0 {
-		logger.Fatal("missing TWITCH_CLIENT_ID")
-	}
-	userID := strings.TrimSpace(os.Getenv("TWITCH_USER_ID"))
-	if len(userID) == 0 {
-		logger.Fatal("missing TWITCH_USER_ID")
-	}
-
-	// Print this here so that we can get the URL if no access token is available
-	authURL := fmt.Sprintf(wsUrl, clientID, url.QueryEscape(strings.Join(scopes, " ")))
-	logger.WithField("authURL", authURL).Info("URL")
-
-	accessToken := strings.TrimSpace(os.Getenv("TWITCH_ACCESS_TOKEN"))
-	if len(accessToken) == 0 {
-		logger.Fatal("missing TWITCH_ACCESS_TOKEN")
-	}
-	websocketURL := strings.TrimSpace(os.Getenv("TWITCH_WEBSOCKET_URL"))
-	if len(websocketURL) == 0 {
-		websocketURL = "wss://eventsub.wss.twitch.tv/ws"
-	}
-	subscriptionURL := strings.TrimSpace(os.Getenv("TWITCH_SUBSCRIPTION_URL"))
-	if len(subscriptionURL) == 0 {
-		subscriptionURL = "https://api.twitch.tv/helix/eventsub/subscriptions"
-	}
-
-	rawWebsocketPort := strings.TrimSpace(os.Getenv("WEBSOCKET_SERVER_PORT"))
-	logger.WithField("raw", rawWebsocketPort).Info("PORT")
-	wsPort, err := strconv.Atoi(rawWebsocketPort)
+	config, err := app.GetConfigFromEnv()
 	if err != nil {
-		logger.Fatal("invalid WEBSOCKET_SERVER_PORT")
+		logger.Fatal(err)
+	}
+
+	if config.AccessToken == "" {
+		url := fmt.Sprintf(wsUrl, config.ClientID, strings.Join(scopes, "%20"))
+		logger.WithField("authorization url", url).Fatal("missing TWITCH_ACCESS_TOKEN. Use the authorization URL if you need to generate one")
 	}
 
 	if err := app.Start(logger, app.Config{
-		ClientID:        clientID,
-		AccessToken:     accessToken,
-		UserId:          userID,
-		WebsocketURL:    websocketURL,
-		SubscriptionURL: subscriptionURL,
-		Port:            wsPort,
+		ClientID:        config.ClientID,
+		AccessToken:     config.AccessToken,
+		UserId:          config.UserId,
+		WebsocketURL:    config.WebsocketURL,
+		SubscriptionURL: config.SubscriptionURL,
+		Port:            config.Port,
 	}); err != nil {
 		logger.WithError(err).Fatal("app failed")
 	}
