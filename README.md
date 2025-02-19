@@ -62,9 +62,9 @@ If an action includes a message (such as a reward redemption, subscription, bits
         "total": 0, // How many months the user has subbed for in total
     },
     "channel_point_redemption": {
-        "reward_id": "" // The ID of the reward that was redeemed
-        "title": "" // The title of the reward that was redeemed
-        "cost": 0 // The cost of the reward that was redeemed
+        "reward_id": "", // The ID of the reward that was redeemed
+        "title": "", // The title of the reward that was redeemed
+        "cost": 0, // The cost of the reward that was redeemed
         "prompt": "" // If there was a prompt from the reward (note that the user message will be in the root `message` field
     },
     "bits": {
@@ -77,14 +77,14 @@ If an action includes a message (such as a reward redemption, subscription, bits
 ```
 
 ### Supported types
----
+
 | EventSub Type | Local Type | Description | Notes |
----
-| `channel.follow` | `follow` | A user follows the channel | |
-| `channel.subscription.gift` | `gift_sub` | A user is gifted a sub | `is_gift` will be `true` |
-| `channel.subscribe` | `subscribe` | A user subscribes | `is_gift` will be `false` |
-| `channel.subscription.message` | `resubscribe` | When a user resubscribes and includes a message, this is the type | |
-| `channel.chat.message` | `chat` | A chat message is sent | |
-| `channel.channel_points_custom_reward_redemption.add` | `channel_points` | When a user redeems a custom channel point | |
-| `channel.cheer` | `bits` | When a user spends bits | |
-| `channel.raid` | `raid` | When a user raids the watched channel | |
+| --- | --- | --- | --- |
+| `channel.follow` | `follow` | A user follows the channel | | 
+| `channel.subscription.gift` | `gift_sub` | A user is gifted a sub | `is_gift` will be `true` | 
+| `channel.subscribe` | `subscribe` | A user subscribes | `is_gift` will be `false` | 
+| `channel.subscription.message` | `resubscribe` | When a user resubscribes and includes a message, this is the type | | 
+| `channel.chat.message` | `chat` | A chat message is sent | | 
+| `channel.channel_points_custom_reward_redemption.add` | `channel_points` | When a user redeems a custom channel point | | 
+| `channel.cheer` | `bits` | When a user spends bits | | 
+| `channel.raid` | `raid` | When a user raids the watched channel | | 
