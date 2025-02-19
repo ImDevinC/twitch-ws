@@ -1,0 +1,54 @@
+name: Build releases
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
+    name: Build
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Set release
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Prepare Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.22"
+      - name: Make
+        run: make release
+      - name: Release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ env.RELEASE_VERSION }}
+          tag_name: ${{ env.RELEASE_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload windows x64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/twitch-ws-windows-x64-${{ env.RELEASE_VERSION }}.zip
+          asset_name: twitch-ws-windows-x64-${{ env.RELEASE_VERSION }}.zip
+          asset_content_type: application/zip
+      - name: Upload linux x64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/twitch-ws-linux-x64-${{ env.RELEASE_VERSION }}.zip
+          asset_name: twitch-ws-linux-x64-${{ env.RELEASE_VERSION }}.zip
+          asset_content_type: application/zip
